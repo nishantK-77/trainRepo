@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const userManagement = require('./userManagement');
-const transactions = require('./transactions');
+const register = require('./register');
+const login = require('./login');
+const remove = require('./remove');
+const update = require('./update');
+const {checkAuth} = require('../middlewares');
 
-router.post('/register', function(req, res){
-    transactions.register(req, res);
-})
-
-router.post('/login', function(req, res){
-    userManagement.login(req, res);
-})
+router.use('/login', login);
+router.use('/register', register);
+router.use('/remove', checkAuth, remove);
+router.use('/update', checkAuth, update);
 
 
 module.exports = router;

@@ -1,35 +1,27 @@
-const database = require('../lib/database');
+const register = require('express').Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-let connection;
-var transactions = {};
+const database = require('../lib/database');
+const sendResponse = require('../utils/sendResponse');
 
-sendResponse = (res, status, data, message) => {
-    res.status(status).json({
-        status,    
-        data,
-        message,
-    });
-}; 
+
+let connection;
 
 insertIntoUsers = async(req) => {
   try {
-    
-    const { name, password } = req.body;
+    const { name, email, password } = req.body;
     const encryptedPassword = await bcrypt.hash(password, 10);
     const userData = {
       name,
+      email, 
       password: encryptedPassword,
     };
     
     console.log("newUser ===>", userData);
-    const newUser = await connection.query('INSERT INTO users SET ? ', userData);
-    // const commit = await connection.commit();
-    // connection.release();
+    const [newUser] = await connection.query('INSERT INTO users SET ? ', userData);
     console.log(newUser);
     return newUser;
-    
   } catch (error) {
     throw error;
   }
@@ -37,32 +29,28 @@ insertIntoUsers = async(req) => {
 
 insertIntoUserRolesMap = async(data) => {
   try {
-    const newUserRole = await connection.query('INSERT INTO UserRoleMap SET ? ', data);
+    const [newUserRole] = await connection.query('INSERT INTO UserRoleMap SET ? ', data);
     console.log(newUserRole);    
   } catch (error) {
     throw error;
   }
 }
 
-transactions.register = async(req, res) => {
+register.route('/').post(async(req, res) => {
     try {
         connection =  await database.getConnection();
         await connection.beginTransaction();
         const newUser = await insertIntoUsers(req);
         const userRoleData = {
-            userId: newUser[0].insertId,
+            userId: newUser.insertId,
             roleId: req.body.roleId,
         }
-        // console.log(userRoleData);
         await insertIntoUserRolesMap(userRoleData);
-        // await connection.query('INSERT INTO UserRoleMap SET ?', userRoleData);
         await connection.commit();
-        // connection.release();
-        
-        // const result = await insertIntoUsers(req);
-        // console.log("line 57 ", result);
-
-        return false;
+        const responseData = {
+            userId: newUser.insertId,
+            email: req.body.email
+        }
         const token = jwt.sign(responseData, "SOME_KEY", { expiresIn: "1d" });
         res.header('x-auth', token);
         
@@ -76,8 +64,6 @@ transactions.register = async(req, res) => {
         }
         return sendResponse(res, 500, [], 'failed', 'something went wrong');
       }
-};
+});
 
-// transactions.register();
-// console.log(database);
-module.exports = transactions;
+module.exports = register;
