@@ -4,13 +4,16 @@ const bcrypt = require('bcrypt');
 
 const database = require('../lib/database');
 const sendResponse = require('../utils/sendResponse');
-
+function validateEmail(email){
+  let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 
 let connection;
 
 insertIntoUsers = async(req) => {
   try {
-    const { name, email, password } = req.body;
+    
     const encryptedPassword = await bcrypt.hash(password, 10);
     const userData = {
       name,
@@ -37,25 +40,38 @@ insertIntoUserRolesMap = async(data) => {
 }
 
 register.route('/').post(async(req, res) => {
-    try {
+  try {
+        const { name, email, password } = req.body;
+        if(!validateEmail(email)){
+          return sendResponse(res, 400, { }, 'Invalid email');
+        }
+        
+        if(name.length < 3){
+          return sendResponse(res, 400, { }, 'Please provide atleast 3 characters for name');
+        }
+        
+        if(password.length < 3){
+          return sendResponse(res, 400, { }, 'Please provide atleast 3 characters for password');
+        }
+        
         connection =  await database.getConnection();
         await connection.beginTransaction();
         const newUser = await insertIntoUsers(req);
         const userRoleData = {
-            userId: newUser.insertId,
+          userId: newUser.insertId,
             roleId: req.body.roleId,
-        }
+          }
         await insertIntoUserRolesMap(userRoleData);
         await connection.commit();
         const responseData = {
-            userId: newUser.insertId,
-            email: req.body.email
+          userId: newUser.insertId,
+          email: req.body.email
         }
         const token = jwt.sign(responseData, "SOME_KEY", { expiresIn: "1d" });
         res.header('x-auth', token);
         
-        return sendResponse(res, 200, { token }, 'Registration successful');
-      
+        return sendResponse(res, 201, { token }, 'Registration successful');
+        
       } catch (err) {
         console.error(err);
         connection.rollback();

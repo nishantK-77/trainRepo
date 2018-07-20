@@ -5,6 +5,11 @@ const sendResponse = require('../utils/sendResponse');
 
 let connection;
 
+function validateEmail(email){
+    let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+}
+
 getUser = async(req) => {
     try {
         const {email} = req.body;
@@ -19,6 +24,8 @@ getUser = async(req) => {
 removeUserRoleMap = async(userData) => {
     try {
         console.log(userData)
+        if(userData.length == 0)
+            return userData;
         const userId = userData[0].uid;
         const removedUserRole = await connection.query(`DELETE FROM UserRoleMap where userId = '${userId}'`);
         console.log("line 23", removedUserRole);
@@ -38,13 +45,21 @@ removeUser = async(req) => {
     }
 }
 
-remove.route('/').post(async(req, res) => {
+remove.route('/').delete(async(req, res) => {
     try {
         // console.log("line 10 ", req.body);  
+        const {email} = req.body;
+        if(!validateEmail(email)){
+            return sendResponse(res, 400, { }, 'Invalid email');
+        }
+          
         connection =  await database.getConnection();
         await connection.beginTransaction();
         const userData = await getUser(req);
-        await removeUserRoleMap(userData)
+        const userRoleData = await removeUserRoleMap(userData);
+        if(userRoleData.length == 0)
+            return sendResponse(res, 404, { }, 'User not found');
+
         await removeUser(req);
         // console.log(removedUser);
         connection.commit();

@@ -4,9 +4,21 @@ const bcrypt = require('bcrypt');
 
 const database = require('../lib/database');
 const sendResponse = require('../utils/sendResponse');
+function validateEmail(email){
+  let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(String(email).toLowerCase());
+}
 
 login.route('/').post(async (req, res) => {
     const { email, password } = req.body;
+
+    if(!validateEmail(email)){
+      return sendResponse(res, 400, { }, 'Invalid email');
+    }
+    
+    if(password.length < 3){
+      return sendResponse(res, 400, { }, 'Please provide atleast 3 characters for password');
+    }
 
     try {
       const [result] = await database.query(`select * from users INNER JOIN UserRoleMap on users.uid = UserRoleMap.userId where users.email = '${email}'`);

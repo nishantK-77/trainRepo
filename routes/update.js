@@ -17,7 +17,7 @@ updateUserRoleMap = async(req) => {
     }
 }
 
-update.route('/').post(async(req, res) => {
+update.route('/').patch(async(req, res) => {
     try {
         console.log("line 10 ", req.body);
         connection =  await database.getConnection();
