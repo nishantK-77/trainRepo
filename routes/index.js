@@ -4,12 +4,12 @@ const register = require('./register');
 const login = require('./login');
 const remove = require('./remove');
 const update = require('./update');
-const {checkAuth} = require('../middlewares');
+const {checkAuth, checkAdmin} = require('../middlewares');
 
 router.use('/login', login);
-router.use('/register', register);
-router.use('/remove', checkAuth, remove);
-router.use('/update', checkAuth, update);
+router.use('/register', checkAuth, checkAdmin, register);
+router.use('/remove', checkAuth, checkAdmin, remove);
+router.use('/update', checkAuth, checkAdmin, update);
 
 
 module.exports = router;

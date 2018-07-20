@@ -60,7 +60,7 @@ register.route('/').post(async(req, res) => {
         console.error(err);
         connection.rollback();
         if (err.code === 'ER_DUP_ENTRY') {
-          return sendResponse(res, 409, [], 'email/username already exist');
+          return sendResponse(res, 409, [], 'email already exist');
         }
         return sendResponse(res, 500, [], 'failed', 'something went wrong');
       }

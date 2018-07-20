@@ -10,7 +10,7 @@ const checkAuth = async (req, res, next) => {
 
   try {
     const decode = await jwt.verify(token, "SOME_KEY");
-    console.log("decode ====> ", decode);
+    // console.log("decode ====> ", decode);
     req.user = decode;
     next();
   } catch (err) {
